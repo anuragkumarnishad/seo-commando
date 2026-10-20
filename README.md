@@ -1,51 +1,36 @@
-# 🚀 SEO Commando
+# 🚀 SEO Commando — Indexing Machine
 
-Browser-console SEO tool for your own sites (sarkariupdates.live, pdfpixel.tech, koi bhi).
-Koi install nahi — bas console mein paste karo aur chalao.
+Teen console-tools jo tumhari site (sarkariupdates.live, pdfpixel.tech, koi bhi) ko
+search engines mein **fast index** karwate hain. Koi install nahi — bas console mein paste karo.
 
-## ✨ Features
-
-- 🔍 **Sitemap Audit** — `/sitemap.xml` (ya robots.txt se) saare URLs padhta hai, har page check karta hai:
-  - Title length (15–70)
-  - Meta description (50–170)
-  - Exactly 1 H1
-  - Canonical link
-  - `noindex` toh nahi lag gaya
-  - OpenGraph title
-  - Har page ko **score /6** + issue list
-- 🚀 **IndexNow submit** — saare URLs ek click mein Bing/Yandex/Seznam ko bhejo (new jobs fast index!)
-- 💾 **CSV download** — poori audit table Excel mein kholo
-- 📋 **Report copy** — issue summary + worst 20 pages clipboard pe
-- Progress bar + live log + draggable panel
+| Tool | File | Kaam | Kahan chalao |
+|---|---|---|---|
+| 🛰️ **GSC Indexer** | `gsc-indexer.js` | Google Search Console mein har URL pe **Request Indexing** auto-dabata hai | `search.google.com/search-console` (DIRECT PASTE — one-liner wahan block hota hai) |
+| ⚡ **IndexNow Turbo** | `index-turbo.js` | Bing + Yandex + ChatGPT-search ko turant ping (IndexNow protocol) | Kahin bhi |
+| 🅱️ **Bing Webmaster Turbo** | `bing-indexer.js` | Bing Webmasters ke Submit URLs box mein **100 URLs ek saath** bhar ke submit | `bing.com/webmasters` → URL Submission page |
 
 ## 🚀 Use kaise kare
 
-1. Apni site kholo (jaise `https://sarkariupdates.live`)
-2. `F12` → **Console**
-3. Paste + Enter:
-
+### ⚡ IndexNow Turbo (kahin bhi)
 ```js
-fetch('https://raw.githubusercontent.com/anuragkumarnishad/seo-commando/main/seo-commando.js').then(r=>r.text()).then(eval)
+fetch('https://raw.githubusercontent.com/anuragkumarnishad/seo-commando/main/index-turbo.js').then(r=>r.text()).then(eval)
 ```
 
-4. **🔍 Sitemap Audit** dabao → progress dekho → **💾 CSV** / **📋 Report** lo
-5. **🚀 IndexNow** ke liye pehle key chahiye (neeche dekho)
+### 🅱️ Bing Webmaster Turbo (Bing Webmasters → URL Submission page pe)
+```js
+fetch('https://raw.githubusercontent.com/anuragkumarnishad/seo-commando/main/bing-indexer.js').then(r=>r.text()).then(eval)
+```
+ Agar EvalError aaye: raw file kholo → Ctrl+A → Ctrl+C → console mein Ctrl+V → Enter
 
-## 🔑 IndexNow key setup (ek baar)
+### 🛰️ GSC Indexer (Google page pe — DIRECT PASTE only)
+1. Raw code kholo: `https://raw.githubusercontent.com/anuragkumarnishad/seo-commando/main/gsc-indexer.js`
+2. **Ctrl+A** → **Ctrl+C**
+3. GSC tab mein **F12** → Console → **Ctrl+V** → **Enter**
+4. Panel mein URLs paste karo (ek per line) → **▶ Start**
 
-1. Koi bhi 32-character hex string banao, e.g. `a1b2c3d4e5f60718293a4b5c6d7e8f90`
-2. Apni site ke root pe file banwao: `https://sarkariupdates.live/a1b2c3d4e5f60718293a4b5c6d7e8f90.txt`
-   jiska content wahi key ho. (Next.js mein: `public/a1b2....txt`)
-   → Apni site wali AI se bol do: *"public folder me <key>.txt bana do, content = <key>"*
-3. Panel ke key box mein key paste karo → 💾
-4. **🚀 IndexNow** dabao — saare URLs submit!
+## 📅 Roz ka routine
+Naye pages bane → **⚡ + 🛰️** (2 min). Hafte mein ek baar **🅱️**. Bas!
 
-## ⚠️ Notes
-
-- Audit same-origin fetch use karta hai → **apni site pe hi chalao**
-- IndexNow GET requests browser se bheji jaati hain; response CORS ki wajah se padha nahi ja sakta, isliye tool "bheja gaya" count dikhata hai
-- Google ke liye: Search Console mein sitemap resubmit karte raho; IndexNow Bing side cover karta hai
-
-## 📄 License
-
-MIT
+## 🔑 IndexNow key (ek baar setup)
+- Key: site ke root pe `<key>.txt` file, content = key (Next.js: `public/<key>.txt`)
+- sarkariupdates.live ki key already set hai — panel mein auto-loaded hoti hai.
