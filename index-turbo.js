@@ -1,6 +1,6 @@
-/* IndexNow Turbo v1.0 — URLs paste karo, ek click me IndexNow submit
-   Use: koi bhi page → F12 → Console → ye code paste → Enter
-   Key pre-filled: sarkariupdates.live wali IndexNow key */
+/* IndexNow Turbo v1.1 — Trusted-Type-safe (Google pages pe bhi chalega)
+   URLs paste karo, ek click me IndexNow submit.
+   Use: koi bhi page → F12 → Console → ye code paste → Enter */
 (function () {
   'use strict';
   if (window.__itCleanup) {
@@ -28,8 +28,22 @@
     busy: false
   };
 
+  /* ---------- safe DOM helper (koi innerHTML nahi) ---------- */
+  function el(tag, attrs, text) {
+    const n = document.createElement(tag);
+    if (attrs) {
+      for (const k in attrs) {
+        if (k === 'css') n.style.cssText = attrs[k];
+        else if (k === 'cls') n.className = attrs[k];
+        else n.setAttribute(k, attrs[k]);
+      }
+    }
+    if (text != null) n.textContent = text;
+    return n;
+  }
+
   /* ---------- styles ---------- */
-  const style = document.createElement('style');
+  const style = el('style');
   style.textContent = [
     '#it-panel{position:fixed;top:14px;right:14px;z-index:2147483647;width:340px;',
     'background:rgba(10,15,30,.94);backdrop-filter:blur(12px);',
@@ -62,62 +76,89 @@
   ].join('\n');
   document.head.appendChild(style);
 
-  /* ---------- panel ---------- */
-  const panel = document.createElement('div');
-  panel.id = 'it-panel';
-  panel.innerHTML = [
-    '<div id="it-head"><b>⚡ IndexNow Turbo</b><span class="sp"></span>',
-    '<span class="it-ibtn" id="it-count" title="Total submit hue URLs" style="width:auto;padding:0 8px;">0</span>',
-    '<button class="it-ibtn" id="it-min" title="Minimize">–</button></div>',
-    '<div id="it-body">',
-    '<div class="it-row"><input class="it-input" id="it-key" placeholder="IndexNow key">',
-    '<button class="it-ibtn" id="it-savekey" title="Key save karo">💾</button></div>',
-    '<textarea id="it-urls" spellcheck="false"></textarea>',
-    '<div class="it-row"><button class="it-btn" id="it-go">🚀 IndexNow Submit</button>',
-    '<button class="it-btn blue" id="it-api">🔁 Site API</button></div>',
-    '<div class="it-row"><button class="it-btn gray" id="it-gsc">📋 GSC links</button>',
-    '<button class="it-btn gray" id="it-clear">🧹 Clear</button></div>',
-    '<div id="it-prog"><i></i></div>',
-    '<div id="it-status">Ready — URLs paste karo, 🚀 dabao ⚡</div>',
-    '<div id="it-log"></div>',
-    '</div>'
-  ].join('\n');
+  /* ---------- panel (pure DOM) ---------- */
+  const panel = el('div', { id: 'it-panel' });
+
+  const head = el('div', { id: 'it-head' });
+  head.appendChild(el('b', null, '⚡ IndexNow Turbo'));
+  head.appendChild(el('span', { cls: 'sp' }));
+  const countChip = el('span', { id: 'it-count', cls: 'it-ibtn', title: 'Total submit hue URLs' }, '0');
+  countChip.style.cssText = 'width:auto;padding:0 8px;';
+  head.appendChild(countChip);
+  const minBtn = el('button', { id: 'it-min', cls: 'it-ibtn', title: 'Minimize' }, '–');
+  head.appendChild(minBtn);
+  panel.appendChild(head);
+
+  const body = el('div', { id: 'it-body' });
+
+  const row1 = el('div', { cls: 'it-row' });
+  const keyInput = el('input', { id: 'it-key', cls: 'it-input', placeholder: 'IndexNow key' });
+  const saveKeyBtn = el('button', { id: 'it-savekey', cls: 'it-ibtn', title: 'Key save karo' }, '💾');
+  row1.appendChild(keyInput);
+  row1.appendChild(saveKeyBtn);
+  body.appendChild(row1);
+
+  const urlsBox = el('textarea', { id: 'it-urls', spellcheck: 'false' });
+  body.appendChild(urlsBox);
+
+  const row2 = el('div', { cls: 'it-row' });
+  const goBtn = el('button', { id: 'it-go', cls: 'it-btn' }, '🚀 IndexNow Submit');
+  const apiBtn = el('button', { id: 'it-api', cls: 'it-btn blue' }, '🔁 Site API');
+  row2.appendChild(goBtn);
+  row2.appendChild(apiBtn);
+  body.appendChild(row2);
+
+  const row3 = el('div', { cls: 'it-row' });
+  const gscBtn = el('button', { id: 'it-gsc', cls: 'it-btn gray' }, '📋 GSC links');
+  const clearBtn = el('button', { id: 'it-clear', cls: 'it-btn gray' }, '🧹 Clear');
+  row3.appendChild(gscBtn);
+  row3.appendChild(clearBtn);
+  body.appendChild(row3);
+
+  const progBox = el('div', { id: 'it-prog' });
+  const progBar = el('i');
+  progBox.appendChild(progBar);
+  body.appendChild(progBox);
+
+  const statusBox = el('div', { id: 'it-status' }, 'Ready ⚡');
+  body.appendChild(statusBox);
+
+  const logBox = el('div', { id: 'it-log' });
+  body.appendChild(logBox);
+
+  panel.appendChild(body);
   document.body.appendChild(panel);
 
-  const $ = function (id) { return panel.querySelector('#' + id); };
-  function setStatus(m) { $('it-status').textContent = m; }
+  function setStatus(m) { statusBox.textContent = m; }
   function logLine(m) {
-    const el = $('it-log');
-    el.innerHTML += '<div>• ' + m + '</div>';
-    el.scrollTop = el.scrollHeight;
+    logBox.appendChild(el('div', null, '• ' + m));
+    logBox.scrollTop = logBox.scrollHeight;
   }
-  function prog(p) { $('it-prog').firstElementChild.style.width = Math.round(p * 100) + '%'; }
-  function setCount() { $('it-count').textContent = state.total; }
+  function prog(p) { progBar.style.width = Math.round(p * 100) + '%'; }
+  function setCount() { countChip.textContent = state.total; }
 
-  $('it-urls').value = DEFAULT_URLS.join('\n');
-  $('it-key').value = state.key;
+  urlsBox.value = DEFAULT_URLS.join('\n');
+  keyInput.value = state.key;
   setCount();
 
-  $('it-min').addEventListener('click', function () {
-    const b = $('it-body');
-    const hidden = b.style.display === 'none';
-    b.style.display = hidden ? 'flex' : 'none';
-    this.textContent = hidden ? '–' : '+';
+  minBtn.addEventListener('click', function () {
+    const hidden = body.style.display === 'none';
+    body.style.display = hidden ? 'flex' : 'none';
+    minBtn.textContent = hidden ? '–' : '+';
   });
-  $('it-savekey').addEventListener('click', function () {
-    state.key = $('it-key').value.trim();
+  saveKeyBtn.addEventListener('click', function () {
+    state.key = keyInput.value.trim();
     localStorage.setItem('it-key', state.key);
     setStatus('🔑 Key save ho gayi');
   });
-  $('it-clear').addEventListener('click', function () {
-    $('it-urls').value = '';
-    $('it-log').innerHTML = '';
+  clearBtn.addEventListener('click', function () {
+    urlsBox.value = '';
+    logBox.textContent = '';
     prog(0);
     setStatus('Clear! Naye URLs paste karo');
   });
 
-  // Draggable
-  $('it-head').addEventListener('mousedown', function (e) {
+  head.addEventListener('mousedown', function (e) {
     if (e.target.tagName === 'BUTTON' || e.target.tagName === 'SPAN') return;
     e.preventDefault();
     const sx = e.clientX, sy = e.clientY;
@@ -136,13 +177,13 @@
   });
 
   function getUrls() {
-    return $('it-urls').value.split(/[\s,]+/).filter(function (u) {
+    return urlsBox.value.split(/[\s,]+/).filter(function (u) {
       return /^https?:\/\//i.test(u);
     }).filter(function (u, i, a) { return a.indexOf(u) === i; });
   }
 
   /* ---------- IndexNow submit ---------- */
-  $('it-go').addEventListener('click', async function () {
+  goBtn.addEventListener('click', async function () {
     if (state.busy) return;
     const urls = getUrls();
     if (!urls.length) { setStatus('Pehle URLs paste karo!'); return; }
@@ -175,8 +216,8 @@
     state.busy = false;
   });
 
-  /* ---------- Site ka apna /api/indexnow ---------- */
-  $('it-api').addEventListener('click', async function () {
+  /* ---------- Site ka /api/indexnow ---------- */
+  apiBtn.addEventListener('click', async function () {
     if (!/sarkariupdates\.live$/i.test(location.hostname)) {
       setStatus('⚠️ Ye button sarkariupdates.live pe chalta hai — site kholo');
       return;
@@ -191,8 +232,8 @@
     }
   });
 
-  /* ---------- GSC inspection links copy ---------- */
-  $('it-gsc').addEventListener('click', function () {
+  /* ---------- GSC links copy ---------- */
+  gscBtn.addEventListener('click', function () {
     const urls = getUrls();
     if (!urls.length) { setStatus('Pehle URLs paste karo!'); return; }
     const lines = urls.map(function (u) {
