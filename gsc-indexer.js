@@ -135,10 +135,21 @@
 
   function setVal(input, v) {
     input.focus();
-    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-    setter.call(input, v);
-    input.dispatchEvent(new Event('input', { bubbles: true }));
-    input.dispatchEvent(new Event('change', { bubbles: true }));
+    try {
+      if (input.select) input.select();
+    } catch (e) {}
+    let ok = false;
+    try {
+      ok = document.execCommand('insertText', false, v);
+    } catch (e) {
+      ok = false;
+    }
+    if (!ok || input.value !== v) {
+      const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+      setter.call(input, v);
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    }
   }
 
   function pressEnter(elm) {
@@ -167,6 +178,30 @@
       await sleep(800);
     }
     return null;
+  }
+
+  // Inspection shuru karwane ke 3 tarike
+  async function submitInspect(input) {
+    pressEnter(input);
+    await sleep(1800);
+    if (/inspect/i.test(location.search) || findRequestBtn()) return 'enter';
+    const f = input.closest && input.closest('form');
+    if (f && f.requestSubmit) {
+      try { f.requestSubmit(); } catch (e) {}
+    }
+    await sleep(1800);
+    if (/inspect/i.test(location.search) || findRequestBtn()) return 'form';
+    const scope = f || document;
+    const btns = scope.querySelectorAll('button, [role="button"]');
+    for (const b of btns) {
+      const l = ((b.getAttribute('aria-label') || '') + ' ' + (b.title || '')).toLowerCase();
+      if (/search|inspect|submit/i.test(l)) {
+        b.click();
+        break;
+      }
+    }
+    await sleep(1800);
+    return 'icon';
   }
 
   function getUrls() {
@@ -205,8 +240,9 @@
       }
       setVal(inp, u);
       await sleep(600);
-      pressEnter(inp);
-      const btn = await waitFor(findRequestBtn, 25000);
+      const how = await submitInspect(inp);
+      logLine('➡️ inspect submit via ' + how + ': ' + short);
+      const btn = await waitFor(findRequestBtn, 30000);
       if (!btn) {
         logLine('⚠️ Request button nahi mila: ' + short);
         continue;
