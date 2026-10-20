@@ -126,30 +126,33 @@
   /* ---------- GSC helpers ---------- */
   function findInspectInput() {
     const inputs = document.querySelectorAll('input');
+    let best = null;
     for (const c of inputs) {
-      const ph = c.getAttribute('placeholder') || '';
-      if (/inspect/i.test(ph)) return c;
+      const r = c.getBoundingClientRect();
+      if (r.width < 150 || r.height < 10) continue;
+      const ph = (c.getAttribute('placeholder') || '') + ' ' + (c.getAttribute('aria-label') || '');
+      if (/inspect/i.test(ph)) return c; // pakka inspect box
+      // fallback: page ke sabse upar wala bara input (top search bar)
+      if (r.top < 150 && (!best || r.top < best.getBoundingClientRect().top)) best = c;
     }
-    return document.querySelector('header input, [role="search"] input, input[type="search"]');
+    return best;
   }
 
   function setVal(input, v) {
     input.focus();
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+    setter.call(input, '');
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    setter.call(input, v);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    if (input.value === v) return true;
+    // fallback: select + insertText
     try {
       if (input.select) input.select();
+      document.execCommand('insertText', false, v);
     } catch (e) {}
-    let ok = false;
-    try {
-      ok = document.execCommand('insertText', false, v);
-    } catch (e) {
-      ok = false;
-    }
-    if (!ok || input.value !== v) {
-      const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-      setter.call(input, v);
-      input.dispatchEvent(new Event('input', { bubbles: true }));
-      input.dispatchEvent(new Event('change', { bubbles: true }));
-    }
+    return input.value === v;
   }
 
   function pressEnter(elm) {
@@ -180,28 +183,22 @@
     return null;
   }
 
-  // Inspection shuru karwane ke 3 tarike
-  async function submitInspect(input) {
+  // Inspection shuru karwane ke 2 pakke tarike: Enter, phir SPA route change
+  async function submitInspect(input, u) {
     pressEnter(input);
-    await sleep(1800);
+    await sleep(2000);
     if (/inspect/i.test(location.search) || findRequestBtn()) return 'enter';
-    const f = input.closest && input.closest('form');
-    if (f && f.requestSubmit) {
-      try { f.requestSubmit(); } catch (e) {}
-    }
-    await sleep(1800);
-    if (/inspect/i.test(location.search) || findRequestBtn()) return 'form';
-    const scope = f || document;
-    const btns = scope.querySelectorAll('button, [role="button"]');
-    for (const b of btns) {
-      const l = ((b.getAttribute('aria-label') || '') + ' ' + (b.title || '')).toLowerCase();
-      if (/search|inspect|submit/i.test(l)) {
-        b.click();
-        break;
-      }
-    }
-    await sleep(1800);
-    return 'icon';
+    // SPA router ko popstate se route karwao
+    try {
+      const p = new URL(u);
+      const id = encodeURIComponent(p.pathname.replace(/^\//, ''));
+      const path = '/search-console/inspect?resource_id=' +
+        encodeURIComponent('sc-domain:' + p.hostname.replace(/^www\./, '')) + '&id=' + id;
+      history.pushState({}, '', path);
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    } catch (e) {}
+    await sleep(2000);
+    return 'route';
   }
 
   function getUrls() {
@@ -238,10 +235,10 @@
         setStatus('⚠️ Inspect box nahi mila — GSC page khula hai na?');
         break;
       }
-      setVal(inp, u);
+      const okSet = setVal(inp, u);
       await sleep(600);
-      const how = await submitInspect(inp);
-      logLine('➡️ inspect submit via ' + how + ': ' + short);
+      const how = await submitInspect(inp, u);
+      logLine('➡️ inspect via ' + how + (okSet ? '' : ' (set?!)') + ': ' + short);
       const btn = await waitFor(findRequestBtn, 30000);
       if (!btn) {
         logLine('⚠️ Request button nahi mila: ' + short);
